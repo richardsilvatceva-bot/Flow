@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flow | Gestão de Inventário</title>
+    
+    <!-- Configurações PWA para Celular (Tela Cheia / Sem URL do Navegador) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Flow">
+    <meta name="theme-color" content="#111827">
+
+    <!-- Ícones para a tela do celular -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+
+    <!-- Manifesto embutido forçando o modo Aplicativo (standalone) -->
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Flow Inventário","short_name":"Flow","display":"standalone","start_url":".","background_color":"%23111827","theme_color":"%23111827","icons":[{"src":"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>","sizes":"512x512","type":"image/svg+xml"}]}'>
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    
+    <style>
+        /* Variáveis de Cores */
+        :root {
+            --bg-color: #f8fafc;
+            --sidebar-bg: #111827;
+            --sidebar-hover: #1f2937;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --border: #e2e8f0;
+            --white: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+        body { display: flex; height: 100vh; background-color: var(--bg-color); color: var(--text-dark); overflow: hidden; }
+
+        /* --- TELA DE LOGIN --- */
+        #view-login { display: flex; justify-content: center; align-items: center; width: 100%; height: 100vh; background-color: var(--sidebar-bg); position: absolute; z-index: 2000; top: 0; left: 0; }
+        .login-box { background: white; padding: 40px 30px; border-radius: 16px; text-align: center; width: 100%; max-width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .login-box .logo-icon { font-size: 48px; margin-bottom: 10px; }
+        .login-box h2 { font-size: 24px; color: #0f172a; margin-bottom: 5px; }
+        .login-box p { color: var(--text-light); font-size: 14px; margin-bottom: 30px; }
+        .login-btn { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; border: none; display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.2s; }
+        .btn-login-admin { background-color: var(--primary); color: white; }
+        .btn-login-admin:hover { background-color: var(--primary-dark); }
+        .btn-login-app { background-color: #f1f5f9; color: var(--text-dark); border: 1px solid var(--border); }
+        .btn-login-app:hover { background-color: #e2e8f0; }
+
+        /* --- ESTRUTURA PRINCIPAL --- */
+        #app-wrapper { display: none; width: 100%; height: 100vh; }
+
+        /* --- MENU LATERAL (SIDEBAR) --- */
+        .sidebar { width: 260px; background-color: var(--sidebar-bg); color: var(--white); display: flex; flex-direction: column; padding: 20px 0; flex-shrink: 0; }
+        .sidebar-logo-container { padding: 0 20px 25px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+        .logo-icon { font-size: 28px; }
+        .logo-text h2 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+        .logo-text p { font-size: 13px; color: #94a3b8; }
+        
+        .nav-item { margin: 5px 15px; padding: 12px 16px; color: #cbd5e1; text-decoration: none; display: flex; align-items: center; gap: 12px; border-radius: 12px; transition: 0.2s; cursor: pointer; font-weight: 500; font-size: 15px; }
+        .nav-item:hover { background-color: var(--sidebar-hover); }
+        .nav-item.active { background-color: var(--primary); color: var(--white); }
+        .nav-item .material-icons-outlined { font-size: 22px; }
+        .spacer { flex: 1; }
+        .btn-sair-sidebar { margin: 15px; background: rgba(239, 68, 68, 0.1); color: #fca5a5; }
+        .btn-sair-sidebar:hover { background: rgba(239, 68, 68, 0.2); color: white; }
+
+        /* --- CONTEÚDO PRINCIPAL --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; }
+        .scrollable-area { padding: 20px; overflow-y: auto; flex: 1; }
+        @media (min-width: 768px) { .scrollable-area { padding: 30px; } }
+        
+        .header-title { font-size: 24px; font-weight: bold; margin-bottom: 5px; color: #0f172a; }
+        .header-subtitle { color: var(--text-light); font-size: 14px; margin-bottom: 25px; }
+        
+        /* Botões */
+        .top-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; gap: 15px; }
+        .botoes-acao { display: flex; gap: 10px; }
+        button { border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-dark); }
+        .btn-secondary { background: var(--white); border: 1px solid var(--border); color: var(--text-dark); }
+        .btn-secondary:hover { background: #f1f5f9; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-success:hover { background-color: #059669; }
+        .btn-danger-outline { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+        .btn-voltar { background: transparent; border: none; font-size: 24px; cursor: pointer; color: var(--text-light); padding: 0 15px 0 0; margin-top: -5px; }
+        
+        .btn-icon-delete { background: none; border: none; color: #cbd5e1; cursor: pointer; border-radius: 6px; padding: 6px; display: inline-flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-icon-delete:hover { color: var(--danger); background-color: #fef2f2; }
+
+        /* --- DASHBOARD CARDS --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: var(--white); padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .stat-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; color: var(--text-light); font-size: 14px; font-weight: 500; }
+        .stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; justify-content: center; align-items: center; }
+        .stat-icon.blue { background-color: #eff6ff; color: #3b82f6; }
+        .stat-icon.green { background-color: #f0fdf4; color: #10b981; }
+        .stat-icon.red { background-color: #fef2f2; color: #ef4444; }
+        .stat-icon.gray { background-color: #f1f5f9; color: #64748b; }
+        .stat-value { font-size: 28px; font-weight: 700; margin-bottom: 4px; color: #0f172a; }
+        .stat-sub { font-size: 13px; color: var(--text-light); }
+
+        /* --- ETIQUETAS E BUSCA --- */
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; border: 1px solid transparent; }
+        .badge.aberto { background: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+        .badge.andamento { background: #fffbeb; color: var(--warning); border-color: #fde68a; }
+        .badge.concluida { background: #f0fdf4; color: var(--success); border-color: #bbf7d0; }
+
+        .search-container { position: relative; width: 100%; max-width: 400px; margin-bottom: 15px; display: flex; align-items: center; }
+        .search-container .material-icons-outlined { position: absolute; left: 12px; color: var(--text-light); font-size: 20px; }
+        .search-container input { width: 100%; padding: 10px 10px 10px 40px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; background: white; }
+
+        /* --- TABELAS RESPONSIVAS --- */
+        .section-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #0f172a; }
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; background: var(--white); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); min-width: 600px; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid var(--border); text-align: left; font-size: 14px; }
+        th { background-color: var(--white); color: var(--text-light); font-weight: 600; border-bottom: 2px solid var(--border); }
+
+        /* --- ECRÃ DE CONFERÊNCIA APP (FUNDO AZUL) --- */
+        .conferencia-container { display: none; flex-direction: column; height: 100vh; background-color: var(--bg-color); width: 100%; position: absolute; top: 0; left: 0; z-index: 1000; }
+        .conferencia-header { background-color: var(--primary-dark); color: white; padding: 20px 20px; }
+        .conferencia-top { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .conferencia-top h1 { font-size: 20px; font-weight: 600; }
+        .conferencia-top p { font-size: 13px; color: #93c5fd; margin-top: 2px; }
+        .btn-voltar-branco { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0;}
+        
+        .filter-pills { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .pill { background: rgba(255, 255, 255, 0.2); color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s; border: none; white-space: nowrap; }
+        .pill.active { background: white; color: var(--primary-dark); }
+        
+        .conferencia-body { padding: 20px; overflow-y: auto; flex: 1; width: 100%; }
+        
+        .item-card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 15px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .item-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; }
+        .item-identificacao { display: flex; gap: 12px; align-items: center; }
+        .loc-icon { background: #eff6ff; color: var(--primary); width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .item-pos { font-weight: 600; font-size: 16px; color: #0f172a; }
+        .item-sku { font-size: 13px; color: var(--text-light); display: flex; align-items: center; gap: 4px; margin-top: 4px;}
+        .badge-pendente { background: #f1f5f9; color: #64748b; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        
+        .item-card-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .input-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 8px; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; text-align: center; }
+        .input-group input:disabled { background-color: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+
+        /* Modais */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 3000; padding: 20px; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h3 { font-size: 18px; color: #0f172a; }
+        .close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-light); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: 500; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. TELA DE LOGIN -->
+    <div id="view-login">
+        <div class="login-box">
+            <div class="logo-icon">📦</div>
+            <h2>Flow Inventário</h2>
+            <p>Selecione o seu perfil de acesso</p>
+            
+            <button class="login-btn btn-login-admin" onclick="fazerLogin('admin')">
+                <span class="material-icons-outlined">admin_panel_settings</span> Administração
+            </button>
+            <button class="login-btn btn-login-app" onclick="fazerLogin('conferente')">
+                <span class="material-icons-outlined">smartphone</span> App Conferência
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. ESTRUTURA PRINCIPAL DO APP -->
+    <div id="app-wrapper">
+        
+        <!-- MENU LATERAL -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-logo-container">
+                <div class="logo-icon">📦</div>
+                <div class="logo-text">
+                    <h2>Inventário</h2>
+                    <p>Administração</p>
+                </div>
+            </div>
+            <a class="nav-item" id="nav-dashboard" onclick="mostrarTela('dashboard')">
+                <span class="material-icons-outlined">grid_view</span> Dashboard
+            </a>
+            <a class="nav-item" id="nav-contagens" onclick="mostrarTela('contagens')">
+                <span class="material-icons-outlined">assignment</span> Contagens
+            </a>
+            
+            <div class="spacer"></div>
+            <button class="nav-item btn-sair-sidebar" onclick="fazerLogout()" style="width: calc(100% - 30px); border:none; text-align:left;">
+                <span class="material-icons-outlined">logout</span> Sair do Sistema
+            </button>
+        </div>
+
+        <div class="main-content">
+            <div class="scrollable-area">
+                
+                <!-- DASHBOARD ADMIN -->
+                <div id="view-dashboard" style="display: none;">
+                    <div class="top-bar">
+                        <div>
+                            <h1 class="header-title">Dashboard</h1>
+                            <p class="header-subtitle">Visão geral das contagens de inventário</p>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header"><span>Em Andamento</span> <div class="stat-icon blue"><span class="material-icons-outlined">inventory_2</span></div></div>
+                            <div class="stat-value" id="stat-andamento">0</div>
+                            <div class="stat-sub">itens não concluídos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header"><span>Contados OK</span> <div class="stat-icon green"><span class="material-icons-outlined">check_circle</span></div></div>
+                            <div class="stat-value" id="stat-ok">0</div>
+                            <div class="stat-sub" id="sub-ok">0% sem divergência</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header"><span>Divergentes</span> <div class="stat-icon red"><span class="material-icons-outlined">warning</span></div></div>
+                            <div class="stat-value" id="stat-divergentes">0</div>
+                            <div class="stat-sub" id="sub-div">0% do total</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-header"><span>Pendentes</span> <div class="stat-icon gray"><span class="material-icons-outlined">pending_actions</span></div></div>
+                            <div class="stat-value" id="stat-pendentes">0</div>
+                            <div class="stat-sub" id="sub-pend">0% do total</div>
+                        </div>
+                    </div>
+
+                    <div class="top-bar" style="margin-bottom: 15px;">
+                        <span class="section-title">Contagens Recentes</span>
+                        <button class="btn-primary" onclick="abrirModalNovaContagem()">+ Nova Contagem</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nome da Contagem</th>
+                                    <th>Data</th>
+                                    <th>Progresso</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-contagens"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- HISTÓRICO DE CONTAGENS ADMIN -->
+                <div id="view-contagens" style="display: none;">
+                    <div class="top-bar">
+                        <div>
+                            <h1 class="header-title">Contagens</h1>
+                            <p class="header-subtitle">Histórico e gestão de todas as contagens</p>
+                        </div>
+                        <button class="btn-primary" onclick="abrirModalNovaContagem()">+ Nova Contagem</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nome da Contagem</th>
+                                    <th>Data</th>
+                                    <th>Progresso</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-todas-contagens"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- DETALHES DA CONTAGEM -->
+                <div id="view-detalhes" style="display: none;">
+                    <div class="top-bar" style="align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center;">
+                            <button class="btn-voltar" onclick="voltarParaLista()">←</button>
+                            <div>
+                                <h1 class="header-title" id="detalhe-nome" style="margin-bottom: 4px;">Nome</h1>
+                                <div style="display: flex; align-items: center;">
+                                    <span class="badge" id="detalhe-status">Status</span>
+                                    <span id="detalhe-conferente" style="margin-left: 10px; font-size: 13px; color: var(--text-light); font-weight: 500;"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="botoes-acao" id="container-botoes-detalhe"></div>
+                    </div>
+
+                    <div class="search-container" id="container-busca">
+                        <span class="material-icons-outlined">search</span>
+                        <input type="text" id="input-busca-codigo" placeholder="Filtrar por código (SKU)..." onkeyup="filtrarTabelaItens()">
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="tabela-itens">
+                            <thead>
+                                <tr id="cabecalho-tabela"></tr>
+                            </thead>
+                            <tbody id="lista-itens"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- LISTA DO CONFERENTE (APP MOBILE VIEW) -->
+                <div id="view-conferente-lista" style="display: none;">
+                    <div class="top-bar" style="align-items: center;">
+                        <div>
+                            <h1 class="header-title">Área de Conferência</h1>
+                            <p class="header-subtitle">Selecione uma contagem para iniciar</p>
+                        </div>
+                        <button class="btn-danger-outline" onclick="fazerLogout()"><span class="material-icons-outlined">logout</span> Sair</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Contagem</th><th>Itens</th><th>Ação</th></tr></thead>
+                            <tbody id="lista-conferente-tabela"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA 3: ECRÃ AZUL DE CONFERÊNCIA -->
+    <div id="view-conferencia-azul" class="conferencia-container">
+        <div class="conferencia-header">
+            <div class="conferencia-top">
+                <button class="btn-voltar-branco" onclick="fecharConferenciaAzul()">←</button>
+                <div>
+                    <h1 id="conf-titulo">Conferência</h1>
+                    <p id="conf-subtitulo">0 pendentes • 0 contados</p>
+                </div>
+            </div>
+            <div class="filter-pills">
+                <button class="pill active">Todos</button>
+                <button class="pill">Pendente</button>
+                <button class="pill">Contado</button>
+            </div>
+        </div>
+        <div class="conferencia-body">
+            <div id="lista-cards-conferencia">
+                <!-- Cartões injetados -->
+            </div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button class="btn-success" style="padding: 15px 30px; font-size: 16px; width: 100%; justify-content: center;" onclick="abrirModalFinalizar()">✓ Finalizar Contagem</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAIS -->
+    <div class="modal-overlay" id="modal-nova-contagem">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nova Contagem</h3>
+                <button class="close-modal" onclick="fecharModais()">×</button>
+            </div>
+            <div class="form-group">
+                <label>Nome da Contagem</label>
+                <input type="text" id="nome-contagem" class="form-control" placeholder="Ex: Contagem de Agosto">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="fecharModais()">Cancelar</button>
+                <button class="btn-primary" onclick="criarContagem()">Criar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-importar">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Adicionar Itens</h3>
+                <button class="close-modal" onclick="fecharModais()">×</button>
+            </div>
+            <div class="form-group">
+                <label>Cole os dados (Posição / Código / Qtd Sistémica):</label>
+                <textarea id="texto-importacao" class="form-control" rows="6" placeholder="A1-01  SKU-1001  10"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="fecharModais()">Cancelar</button>
+                <button class="btn-primary" onclick="importarItens()">Importar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-finalizar">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Concluir Contagem</h3>
+                <button class="close-modal" onclick="fecharModais()">×</button>
+            </div>
+            <div class="form-group">
+                <label>Informe o nome do conferente responsável:</label>
+                <input type="text" id="nome-conferente" class="form-control" placeholder="Ex: João Silva">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="fecharModais()">Cancelar</button>
+                <button class="btn-primary" onclick="confirmarFinalizacao()">Confirmar e Concluir</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let contagemAtualId = null;
+        let telaAtualAdmin = 'dashboard';
+        let perfilAtual = null;
+
+        // --- SISTEMA DE LOGIN E CONTROLE DE PERFIL ---
+        function fazerLogin(perfil) {
+            perfilAtual = perfil;
+            document.getElementById('view-login').style.display = 'none';
+            document.getElementById('app-wrapper').style.display = 'flex';
+
+            if(perfil === 'admin') {
+                document.getElementById('sidebar').style.display = 'flex';
+                mostrarTela('dashboard');
+            } else if (perfil === 'conferente') {
+                document.getElementById('sidebar').style.display = 'none';
+                mostrarTela('conferente-lista');
+            }
+        }
+
+        function fazerLogout() {
+            perfilAtual = null;
+            document.getElementById('app-wrapper').style.display = 'none';
+            document.getElementById('view-conferencia-azul').style.display = 'none';
+            document.getElementById('view-login').style.display = 'flex';
+        }
+
+        // --- NAVEGAÇÃO INTERNA ---
+        function mostrarTela(tela) {
+            if(perfilAtual === 'admin' && (tela === 'dashboard' || tela === 'contagens')) {
+                telaAtualAdmin = tela;
+            }
+
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-dashboard').style.display = 'none';
+            document.getElementById('view-contagens').style.display = 'none';
+            document.getElementById('view-detalhes').style.display = 'none';
+            document.getElementById('view-conferente-lista').style.display = 'none';
+
+            if(tela === 'dashboard') {
+                document.getElementById('nav-dashboard').classList.add('active');
+                document.getElementById('view-dashboard').style.display = 'block';
+                carregarListasEEstatisticas();
+            } else if (tela === 'contagens') {
+                document.getElementById('nav-contagens').classList.add('active');
+                document.getElementById('view-contagens').style.display = 'block';
+                carregarListasEEstatisticas();
+            } else if (tela === 'conferente-lista') {
+                document.getElementById('view-conferente-lista').style.display = 'block';
+                carregarListaConferente();
+            }
+        }
+
+        function voltarParaLista() {
+            mostrarTela(telaAtualAdmin);
+        }
+
+        function excluirContagem(id, event) {
+            event.stopPropagation(); 
+            if(confirm("Tem certeza de que deseja excluir esta contagem permanentemente?")) {
+                let contagens = JSON.parse(localStorage.getItem('flow_contagens') || '[]');
+                contagens = contagens.filter(c => c.id !== id);
+                localStorage.setItem('flow_contagens', JSON.stringify(contagens));
+                carregarListasEEstatisticas();
+            }
+        }
+
+        // --- PREENCHIMENTO ESTATÍSTICAS ---
+        function carregarListasEEstatisticas() {
+            const contagens = JSON.parse(localStorage.getItem('flow_contagens') || '[]');
+            const tbodyDash = document.getElementById('lista-contagens');
+            const tbodyTodas = document.getElementById('lista-todas-contagens');
+            tbodyDash.innerHTML = ''; tbodyTodas.innerHTML = '';
+
+            let totalItens = 0, andamento = 0, contadosOk = 0, divergentes = 0, pendentes = 0;
+
+            contagens.reverse().forEach(c => {
+                if(!c.itens) c.itens = [];
+                totalItens += c.itens.length;
+                
+                let badgeClass = 'aberto';
+                if(c.status === 'Concluída') badgeClass = 'concluida';
+                else if(c.status === 'Em andamento') badgeClass = 'andamento';
+
+                if (c.status !== 'Concluída') andamento += c.itens.length;
+
+                c.itens.forEach(i => {
+                    if (c.status === 'Concluída') {
+                        let sist = i.qtdSistematica ? parseInt(i.qtdSistematica) : 0;
+                        let fis = (i.qtdFisica !== undefined && i.qtdFisica !== "") ? parseInt(i.qtdFisica) : 0;
+                        if (sist === fis) contadosOk++; else divergentes++;
+                    } else { pendentes++; }
+                });
+
+                let linhaHtml = `
+                    <tr style="cursor:pointer" onclick="abrirDetalhes(${c.id})">
+                        <td style="font-weight: 500; color: #0f172a;">${c.nome}</td>
+                        <td>${c.data || 'Recente'}</td>
+                        <td>${c.itens.length} itens</td>
+                        <td><span class="badge ${badgeClass}">${c.status}</span></td>
+                        <td style="text-align: right;">
+                            <button class="btn-icon-delete" title="Excluir Contagem" onclick="excluirContagem(${c.id}, event)">
+                                <span class="material-icons-outlined" style="font-size: 20px;">delete</span>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbodyDash.innerHTML += linhaHtml;
+                tbodyTodas.innerHTML += linhaHtml;
+            });
+
+            let pctOk = totalItens > 0 ? Math.round((contadosOk / totalItens) * 100) : 0;
+            let pctDiv = totalItens > 0 ? Math.round((divergentes / totalItens) * 100) : 0;
+            let pctPend = totalItens > 0 ? Math.round((pendentes / totalItens) * 100) : 0;
+
+            document.getElementById('stat-andamento').innerText = andamento;
+            document.getElementById('stat-ok').innerText = contadosOk;
+            document.getElementById('stat-divergentes').innerText = divergentes;
+            document.getElementById('stat-pendentes').innerText = pendentes;
+            
+            document.getElementById('sub-ok').innerText = `${pctOk}% sem divergência`;
+            document.getElementById('sub-div').innerText = `${pctDiv}% do total`;
+            document.getElementById('sub-pend').innerText = `${pctPend}% do total`;
+        }
+
+        function criarContagem() {
+            const nome = document.getElementById('nome-contagem').value;
+            if(!nome) return alert("O nome é obrigatório!");
+            const nova = { id: Date.now(), nome: nome, data: new Date().toLocaleDateString('pt-PT'), status: 'Em aberto', itens: [] };
+            const contagens = JSON.parse(localStorage.getItem('flow_contagens') || '[]');
+            contagens.push(nova);
+            localStorage.setItem('flow_contagens', JSON.stringify(contagens));
+            fecharModais(); carregarListasEEstatisticas();
+        }
+
+        function filtrarTabelaItens() {
+            let input = document.getElementById("input-busca-codigo").value.toUpperCase();
+            let trs = document.getElementById("lista-itens").getElementsByTagName("tr");
+            
+            for (let i = 0; i < trs.length; i++) {
+                let tdCodigo = trs[i].getElementsByTagName("td")[1];
+                if (tdCodigo) {
+                    let txtValue = tdCodigo.textContent || tdCodigo.innerText;
+                    trs[i].style.display = txtValue.toUpperCase().indexOf(input) > -1 ? "" : "none";
+                }
+            }
+        }
+
+        function abrirDetalhes(id) {
+            contagemAtualId = id;
+            const c = JSON.parse(localStorage.getItem('flow_contagens') || '[]').find(x => x.id === id);
+            if(!c) return; 
+
+            document.getElementById('detalhe-nome').innerText = c.nome;
+            const badge = document.getElementById('detalhe-status');
+            badge.innerText = c.status;
+            badge.className = 'badge ' + (c.status === 'Concluída' ? 'concluida' : (c.status === 'Em andamento' ? 'andamento' : 'aberto'));
+            document.getElementById('detalhe-conferente').innerText = (c.status === 'Concluída' && c.conferente) ? `• Conferente: ${c.conferente}` : '';
+
+            document.getElementById('view-dashboard').style.display = 'none';
+            document.getElementById('view-contagens').style.display = 'none';
+            document.getElementById('view-detalhes').style.display = 'block';
+
+            document.getElementById('input-busca-codigo').value = '';
+            document.getElementById('container-busca').style.display = (c.itens && c.itens.length > 0) ? 'flex' : 'none';
+
+            const botoes = document.getElementById('container-botoes-detalhe');
+            const cabecalho = document.getElementById('cabecalho-tabela');
+            const tbody = document.getElementById('lista-itens');
+            tbody.innerHTML = '';
+
+            if (c.status === 'Em aberto') {
+                botoes.innerHTML = `<button class="btn-secondary" onclick="abrirModalImportar()">+ Adicionar Itens</button>`;
+                cabecalho.innerHTML = `<th>Posição</th><th>Código (SKU)</th><th>Qtd. Sistémica</th><th>Status</th>`;
+                c.itens.forEach(i => tbody.innerHTML += `<tr><td>${i.posicao}</td><td>${i.codigo}</td><td>${i.qtdSistematica !== undefined ? i.qtdSistematica : '-'}</td><td>Pendente</td></tr>`);
+            } 
+            else if (c.status === 'Em andamento') {
+                botoes.innerHTML = `<button class="btn-success" onclick="abrirModalFinalizar()">✓ Forçar Conclusão</button>`;
+                cabecalho.innerHTML = `<th>Posição</th><th>Código (SKU)</th><th>Qtd. Sistémica</th><th>Qtd. Física</th>`;
+                c.itens.forEach((i) => {
+                    let sist = (i.qtdSistematica !== undefined && i.qtdSistematica !== "") ? i.qtdSistematica : '-';
+                    let fis = (i.qtdFisica !== undefined && i.qtdFisica !== "") ? i.qtdFisica : '-';
+                    tbody.innerHTML += `<tr><td>${i.posicao}</td><td>${i.codigo}</td><td>${sist}</td><td>${fis}</td></tr>`;
+                });
+            }
+            else {
+                botoes.innerHTML = `<button class="btn-primary" onclick="exportarExcel()">📥 Exportar Excel</button>`;
+                cabecalho.innerHTML = `<th>Posição</th><th>Código (SKU)</th><th>Sistémica</th><th>Física</th><th>Diferença</th>`;
+                c.itens.forEach(i => {
+                    let sist = i.qtdSistematica ? parseInt(i.qtdSistematica) : 0;
+                    let fis = i.qtdFisica ? parseInt(i.qtdFisica) : 0;
+                    let dif = fis - sist;
+                    let cor = dif === 0 ? 'color:var(--success)' : 'color:var(--danger)';
+                    tbody.innerHTML += `<tr><td>${i.posicao}</td><td>${i.codigo}</td><td>${sist}</td><td>${fis}</td><td style="font-weight:bold;${cor}">${dif>0?'+'+dif:dif}</td></tr>`;
+                });
+            }
+            filtrarTabelaItens();
+        }
+
+        // --- ÁREA DO CONFERENTE (APP MOBILE) ---
+        function carregarListaConferente() {
+            const contagens = JSON.parse(localStorage.getItem('flow_contagens') || '[]').filter(c => c.status !== 'Concluída');
+            const tbody = document.getElementById('lista-conferente-tabela');
+            tbody.innerHTML = '';
+            
+            if(contagens.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 20px; color: var(--text-light);">Nenhuma contagem liberada no momento.</td></tr>';
+                return;
+            }
+
+            contagens.forEach(c => {
+                tbody.innerHTML += `<tr>
+                    <td><strong>${c.nome}</strong><br><small>${c.status}</small></td>
+                    <td>${c.itens.length}</td>
+                    <td><button class="btn-primary" style="padding: 8px 12px;" onclick="iniciarConferenciaAzul(${c.id})">Abrir</button></td>
+                </tr>`;
+            });
+        }
+
+        function iniciarConferenciaAzul(id) {
+            contagemAtualId = id;
+            const contagens = JSON.parse(localStorage.getItem('flow_contagens') || '[]');
+            const index = contagens.findIndex(x => x.id === id);
+            
+            if(contagens[index].itens.length === 0) return alert("Esta contagem não possui itens para conferir.");
+            
+            if(contagens[index].status === 'Em aberto') {
+                contagens[index].status = 'Em andamento';
+                localStorage.setItem('flow_contagens', JSON.stringify(contagens));
+            }
+
+            document.getElementById('app-wrapper').style.display = 'none';
+            document.getElementById('view-conferencia-azul').style.display = 'flex';
+
+            const c = contagens[index];
+            document.getElementById('conf-titulo').innerText = c.nome;
+            
+            let contados = c.itens.filter(i => i.qtdFisica !== undefined && i.qtdFisica !== "").length;
+            document.getElementById('conf-subtitulo').innerText = `${c.itens.length - contados} pendentes • ${contados} contados`;
+
+            const container = document.getElementById('lista-cards-conferencia');
+            container.innerHTML = '';
+
+            c.itens.forEach((item, idx) => {
+                let temSistemica = item.qtdSistematica !== undefined && item.qtdSistematica !== "" && parseInt(item.qtdSistematica) > 0;
+                let disabledAttr = temSistemica ? 'disabled' : '';
+
+                container.innerHTML += `
+                    <div class="item-card">
+                        <div class="item-card-top">
+                            <div class="item-identificacao">
+                                <div class="loc-icon"><span class="material-icons-outlined">place</span></div>
+                                <div>
+                                    <div class="item-pos">${item.posicao}</div>
+                                    <div class="item-sku"><span class="material-icons-outlined" style="font-size:14px">inventory_2</span> ${item.codigo}</div>
+                                </div>
+                            </div>
+                            <span class="badge-pendente">Pendente</span>
+                        </div>
+                        <div class="item-card-inputs">
+                            <div class="input-group">
+                                <label>Qtd. Sistémica</label>
+                                <input type="number" value="${item.qtdSistematica || ''}" ${disabledAttr} onchange="salvarQtdSistemica(${idx}, this.value)">
+                            </div>
+                            <div class="input-group">
+                                <label>Qtd. Física</label>
+                                <input type="number" placeholder="0" value="${item.qtdFisica !== undefined ? item.qtdFisica : ''}" onchange="salvarQtd(${idx}, this.value)">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function fecharConferenciaAzul() {
+            document.getElementById('app-wrapper').style.display = 'flex';
+            document.getElementById('view-conferencia-azul').style.display = 'none';
+            
+            if(perfilAtual === 'admin') abrirDetalhes(contagemAtualId);
+            else mostrarTela('conferente-lista');
+        }
+
+        function abrirModalFinalizar() {
+            document.getElementById('modal-finalizar').style.display = 'flex';
+            document.getElementById('nome-conferente').value = '';
+        }
+
+        function confirmarFinalizacao() {
+            const nomeConferente = document.getElementById('nome-conferente').value.trim();
+            if(!nomeConferente) return alert("Por favor, digite o nome do conferente para concluir!");
+
+            const contagens = JSON.parse(localStorage.getItem('flow_contagens'));
+            const c = contagens.find(x => x.id === contagemAtualId);
+            
+            c.status = 'Concluída';
+            c.conferente = nomeConferente;
+            
+            c.itens.forEach(i => { 
+                if(i.qtdFisica === undefined || i.qtdFisica === "") i.qtdFisica = 0; 
+                if(i.qtdSistematica === undefined || i.qtdSistematica === "") i.qtdSistematica = 0;
+            });
+            
+            localStorage.setItem('flow_contagens', JSON.stringify(contagens));
+            fecharModais();
+            
+            document.getElementById('view-conferencia-azul').style.display = 'none';
+            document.getElementById('app-wrapper').style.display = 'flex';
+            
+            if(perfilAtual === 'admin') abrirDetalhes(contagemAtualId);
+            else mostrarTela('conferente-lista');
+        }
+
+        function salvarQtd(idx, val) {
+            const contagens = JSON.parse(localStorage.getItem('flow_contagens'));
+            const c = contagens.find(x => x.id === contagemAtualId);
+            c.itens[idx].qtdFisica = val ? parseInt(val) : 0;
+            localStorage.setItem('flow_contagens', JSON.stringify(contagens));
+            
+            let contados = c.itens.filter(i => i.qtdFisica !== undefined && i.qtdFisica !== "").length;
+            document.getElementById('conf-subtitulo').innerText = `${c.itens.length - contados} pendentes • ${contados} contados`;
+        }
+
+        function salvarQtdSistemica(idx, val) {
+            const contagens = JSON.parse(localStorage.getItem('flow_contagens'));
+            const c = contagens.find(x => x.id === contagemAtualId);
+            c.itens[idx].qtdSistematica = val ? parseInt(val) : 0;
+            localStorage.setItem('flow_contagens', JSON.stringify(contagens));
+        }
+
+        function importarItens() {
+            const txt = document.getElementById('texto-importacao').value.trim();
+            const linhas = txt.split('\n');
+            const contagens = JSON.parse(localStorage.getItem('flow_contagens'));
+            const c = contagens.find(x => x.id === contagemAtualId);
+            
+            linhas.forEach(l => {
+                const p = l.trim().split(/\s+/);
+                if(p.length >= 2) c.itens.push({ posicao: p[0], codigo: p[1], qtdSistematica: p[2]||"" });
+            });
+            localStorage.setItem('flow_contagens', JSON.stringify(contagens));
+            fecharModais(); abrirDetalhes(contagemAtualId);
+        }
+
+        function exportarExcel() {
+            const c = JSON.parse(localStorage.getItem('flow_contagens')).find(x => x.id === contagemAtualId);
+            let csv = "data:text/csv;charset=utf-8,\uFEFFPosição;Código;Sistémica;Física;Diferença;Conferente\n";
+            c.itens.forEach(i => {
+                let sist = i.qtdSistematica ? parseInt(i.qtdSistematica) : 0;
+                let fis = i.qtdFisica ? parseInt(i.qtdFisica) : 0;
+                csv += `${i.posicao};${i.codigo};${sist};${fis};${fis - sist};${c.conferente || ''}\n`;
+            });
+            const a = document.createElement("a"); a.href = encodeURI(csv); a.download = `Contagem_${c.nome}.csv`; a.click();
+        }
+
+        function abrirModalNovaContagem() { document.getElementById('modal-nova-contagem').style.display = 'flex'; }
+        function abrirModalImportar() { document.getElementById('modal-importar').style.display = 'flex'; }
+        function fecharModais() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
+    </script>
+</body>
+</html>
