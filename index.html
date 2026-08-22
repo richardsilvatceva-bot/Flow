@@ -5,20 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Flow | Gestão de Inventário</title>
     
-    <!-- Configurações PWA para Celular (Tela Cheia / Sem URL do Navegador) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Flow">
     <meta name="theme-color" content="#111827">
 
-    <!-- Ícones para a tela do celular -->
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
-
-    <!-- Manifesto embutido forçando o modo Aplicativo (standalone) -->
     <link rel="manifest" href='data:application/manifest+json,{"name":"Flow Inventário","short_name":"Flow","display":"standalone","start_url":".","background_color":"%23111827","theme_color":"%23111827","icons":[{"src":"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>","sizes":"512x512","type":"image/svg+xml"}]}'>
-
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     
     <style>
@@ -91,7 +86,6 @@
         .btn-success:hover { background-color: #059669; }
         .btn-danger-outline { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
         .btn-voltar { background: transparent; border: none; font-size: 24px; cursor: pointer; color: var(--text-light); padding: 0 15px 0 0; margin-top: -5px; }
-        
         .btn-icon-delete { background: none; border: none; color: #cbd5e1; cursor: pointer; border-radius: 6px; padding: 6px; display: inline-flex; align-items: center; justify-content: center; transition: 0.2s; }
         .btn-icon-delete:hover { color: var(--danger); background-color: #fef2f2; }
 
@@ -112,7 +106,6 @@
         .badge.aberto { background: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
         .badge.andamento { background: #fffbeb; color: var(--warning); border-color: #fde68a; }
         .badge.concluida { background: #f0fdf4; color: var(--success); border-color: #bbf7d0; }
-
         .search-container { position: relative; width: 100%; max-width: 400px; margin-bottom: 15px; display: flex; align-items: center; }
         .search-container .material-icons-outlined { position: absolute; left: 12px; color: var(--text-light); font-size: 20px; }
         .search-container input { width: 100%; padding: 10px 10px 10px 40px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; background: white; }
@@ -131,11 +124,9 @@
         .conferencia-top h1 { font-size: 20px; font-weight: 600; }
         .conferencia-top p { font-size: 13px; color: #93c5fd; margin-top: 2px; }
         .btn-voltar-branco { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0;}
-        
         .filter-pills { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
         .pill { background: rgba(255, 255, 255, 0.2); color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s; border: none; white-space: nowrap; }
         .pill.active { background: white; color: var(--primary-dark); }
-        
         .conferencia-body { padding: 20px; overflow-y: auto; flex: 1; width: 100%; }
         
         .item-card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 15px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
@@ -161,9 +152,14 @@
         .form-group label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: 500; }
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
+        
+        /* Loading Overlay */
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; display: none; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); }
     </style>
 </head>
 <body>
+
+    <div id="loading-overlay">Sincronizando com a Nuvem...</div>
 
     <!-- 1. TELA DE LOGIN -->
     <div id="view-login">
@@ -183,7 +179,6 @@
 
     <!-- 2. ESTRUTURA PRINCIPAL DO APP -->
     <div id="app-wrapper">
-        
         <!-- MENU LATERAL -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-logo-container">
@@ -199,7 +194,6 @@
             <a class="nav-item" id="nav-contagens" onclick="mostrarTela('contagens')">
                 <span class="material-icons-outlined">assignment</span> Contagens
             </a>
-            
             <div class="spacer"></div>
             <button class="nav-item btn-sair-sidebar" onclick="fazerLogout()" style="width: calc(100% - 30px); border:none; text-align:left;">
                 <span class="material-icons-outlined">logout</span> Sair do Sistema
@@ -333,7 +327,6 @@
                         </table>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -355,9 +348,7 @@
             </div>
         </div>
         <div class="conferencia-body">
-            <div id="lista-cards-conferencia">
-                <!-- Cartões injetados -->
-            </div>
+            <div id="lista-cards-conferencia"></div>
             <div style="text-align: right; margin-top: 20px;">
                 <button class="btn-success" style="padding: 15px 30px; font-size: 16px; width: 100%; justify-content: center;" onclick="abrirModalFinalizar()">✓ Finalizar Contagem</button>
             </div>
@@ -417,9 +408,61 @@
     </div>
 
     <script>
+        // ==========================================
+        // URL DO GOOGLE APPS SCRIPT
+        // ==========================================
+        const SCRIPT_URL = 'https://script.google.com/a/macros/grupoboticario.com.br/s/AKfycbzAyVjDCTZVc2EASdLoYg7YKtWqa49cbLDsbTULmAMPYPCP6Lm8DSIyHHrT2zDaSSdQLQ/exec';
+
         let contagemAtualId = null;
         let telaAtualAdmin = 'dashboard';
         let perfilAtual = null;
+
+        // UI Auxiliar para loading
+        function showLoading() { document.getElementById('loading-overlay').style.display = 'flex'; }
+        function hideLoading() { document.getElementById('loading-overlay').style.display = 'none'; }
+
+        // --- FUNÇÕES DE BANCO DE DADOS (GOOGLE PLANILHAS) ---
+        async function fetchContagens() {
+            try {
+                showLoading();
+                const response = await fetch(SCRIPT_URL);
+                const data = await response.json();
+                hideLoading();
+                return data;
+            } catch (e) {
+                hideLoading();
+                console.error("Erro ao buscar dados do Google:", e);
+                return [];
+            }
+        }
+
+        async function saveContagem(contagem) {
+            try {
+                showLoading();
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'save', dados: contagem })
+                });
+                hideLoading();
+            } catch (e) {
+                hideLoading();
+                console.error("Erro ao salvar no Google:", e);
+            }
+        }
+
+        async function deleteContagem(id) {
+            try {
+                showLoading();
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'delete', id: id })
+                });
+                hideLoading();
+            } catch (e) {
+                hideLoading();
+                console.error("Erro ao deletar no Google:", e);
+            }
+        }
 
         // --- SISTEMA DE LOGIN E CONTROLE DE PERFIL ---
         function fazerLogin(perfil) {
@@ -473,19 +516,17 @@
             mostrarTela(telaAtualAdmin);
         }
 
-        function excluirContagem(id, event) {
+        async function excluirContagem(id, event) {
             event.stopPropagation(); 
             if(confirm("Tem certeza de que deseja excluir esta contagem permanentemente?")) {
-                let contagens = JSON.parse(localStorage.getItem('flow_contagens') || '[]');
-                contagens = contagens.filter(c => c.id !== id);
-                localStorage.setItem('flow_contagens', JSON.stringify(contagens));
-                carregarListasEEstatisticas();
+                await deleteContagem(id);
+                await carregarListasEEstatisticas();
             }
         }
 
         // --- PREENCHIMENTO ESTATÍSTICAS ---
-        function carregarListasEEstatisticas() {
-            const contagens = JSON.parse(localStorage.getItem('flow_contagens') || '[]');
+        async function carregarListasEEstatisticas() {
+            const contagens = await fetchContagens();
             const tbodyDash = document.getElementById('lista-contagens');
             const tbodyTodas = document.getElementById('lista-todas-contagens');
             tbodyDash.innerHTML = ''; tbodyTodas.innerHTML = '';
@@ -541,14 +582,15 @@
             document.getElementById('sub-pend').innerText = `${pctPend}% do total`;
         }
 
-        function criarContagem() {
+        async function criarContagem() {
             const nome = document.getElementById('nome-contagem').value;
             if(!nome) return alert("O nome é obrigatório!");
-            const nova = { id: Date.now(), nome: nome, data: new Date().toLocaleDateString('pt-PT'), status: 'Em aberto', itens: [] };
-            const contagens = JSON.parse(localStorage.getItem('flow_contagens') || '[]');
-            contagens.push(nova);
-            localStorage.setItem('flow_contagens', JSON.stringify(contagens));
-            fecharModais(); carregarListasEEstatisticas();
+            const id = Date.now();
+            const nova = { id: id, nome: nome, data: new Date().toLocaleDateString('pt-PT'), status: 'Em aberto', itens: [] };
+            
+            await saveContagem(nova);
+            fecharModais();
+            await carregarListasEEstatisticas();
         }
 
         function filtrarTabelaItens() {
@@ -564,9 +606,10 @@
             }
         }
 
-        function abrirDetalhes(id) {
+        async function abrirDetalhes(id) {
             contagemAtualId = id;
-            const c = JSON.parse(localStorage.getItem('flow_contagens') || '[]').find(x => x.id === id);
+            const contagens = await fetchContagens();
+            const c = contagens.find(x => x.id === id);
             if(!c) return; 
 
             document.getElementById('detalhe-nome').innerText = c.nome;
@@ -615,9 +658,9 @@
             filtrarTabelaItens();
         }
 
-        // --- ÁREA DO CONFERENTE (APP MOBILE) ---
-        function carregarListaConferente() {
-            const contagens = JSON.parse(localStorage.getItem('flow_contagens') || '[]').filter(c => c.status !== 'Concluída');
+        async function carregarListaConferente() {
+            const todas = await fetchContagens();
+            const contagens = todas.filter(c => c.status !== 'Concluída');
             const tbody = document.getElementById('lista-conferente-tabela');
             tbody.innerHTML = '';
             
@@ -635,16 +678,16 @@
             });
         }
 
-        function iniciarConferenciaAzul(id) {
+        async function iniciarConferenciaAzul(id) {
             contagemAtualId = id;
-            const contagens = JSON.parse(localStorage.getItem('flow_contagens') || '[]');
+            const contagens = await fetchContagens();
             const index = contagens.findIndex(x => x.id === id);
             
             if(contagens[index].itens.length === 0) return alert("Esta contagem não possui itens para conferir.");
             
             if(contagens[index].status === 'Em aberto') {
                 contagens[index].status = 'Em andamento';
-                localStorage.setItem('flow_contagens', JSON.stringify(contagens));
+                await saveContagem(contagens[index]);
             }
 
             document.getElementById('app-wrapper').style.display = 'none';
@@ -690,12 +733,12 @@
             });
         }
 
-        function fecharConferenciaAzul() {
+        async function fecharConferenciaAzul() {
             document.getElementById('app-wrapper').style.display = 'flex';
             document.getElementById('view-conferencia-azul').style.display = 'none';
             
-            if(perfilAtual === 'admin') abrirDetalhes(contagemAtualId);
-            else mostrarTela('conferente-lista');
+            if(perfilAtual === 'admin') await abrirDetalhes(contagemAtualId);
+            else await carregarListaConferente();
         }
 
         function abrirModalFinalizar() {
@@ -703,11 +746,11 @@
             document.getElementById('nome-conferente').value = '';
         }
 
-        function confirmarFinalizacao() {
+        async function confirmarFinalizacao() {
             const nomeConferente = document.getElementById('nome-conferente').value.trim();
             if(!nomeConferente) return alert("Por favor, digite o nome do conferente para concluir!");
 
-            const contagens = JSON.parse(localStorage.getItem('flow_contagens'));
+            const contagens = await fetchContagens();
             const c = contagens.find(x => x.id === contagemAtualId);
             
             c.status = 'Concluída';
@@ -718,49 +761,53 @@
                 if(i.qtdSistematica === undefined || i.qtdSistematica === "") i.qtdSistematica = 0;
             });
             
-            localStorage.setItem('flow_contagens', JSON.stringify(contagens));
+            await saveContagem(c);
             fecharModais();
             
             document.getElementById('view-conferencia-azul').style.display = 'none';
             document.getElementById('app-wrapper').style.display = 'flex';
             
-            if(perfilAtual === 'admin') abrirDetalhes(contagemAtualId);
-            else mostrarTela('conferente-lista');
+            if(perfilAtual === 'admin') await abrirDetalhes(contagemAtualId);
+            else await carregarListaConferente();
         }
 
-        function salvarQtd(idx, val) {
-            const contagens = JSON.parse(localStorage.getItem('flow_contagens'));
+        async function salvarQtd(idx, val) {
+            const contagens = await fetchContagens();
             const c = contagens.find(x => x.id === contagemAtualId);
             c.itens[idx].qtdFisica = val ? parseInt(val) : 0;
-            localStorage.setItem('flow_contagens', JSON.stringify(contagens));
+            
+            await saveContagem(c);
             
             let contados = c.itens.filter(i => i.qtdFisica !== undefined && i.qtdFisica !== "").length;
             document.getElementById('conf-subtitulo').innerText = `${c.itens.length - contados} pendentes • ${contados} contados`;
         }
 
-        function salvarQtdSistemica(idx, val) {
-            const contagens = JSON.parse(localStorage.getItem('flow_contagens'));
+        async function salvarQtdSistemica(idx, val) {
+            const contagens = await fetchContagens();
             const c = contagens.find(x => x.id === contagemAtualId);
             c.itens[idx].qtdSistematica = val ? parseInt(val) : 0;
-            localStorage.setItem('flow_contagens', JSON.stringify(contagens));
+            await saveContagem(c);
         }
 
-        function importarItens() {
+        async function importarItens() {
             const txt = document.getElementById('texto-importacao').value.trim();
             const linhas = txt.split('\n');
-            const contagens = JSON.parse(localStorage.getItem('flow_contagens'));
+            const contagens = await fetchContagens();
             const c = contagens.find(x => x.id === contagemAtualId);
             
             linhas.forEach(l => {
                 const p = l.trim().split(/\s+/);
                 if(p.length >= 2) c.itens.push({ posicao: p[0], codigo: p[1], qtdSistematica: p[2]||"" });
             });
-            localStorage.setItem('flow_contagens', JSON.stringify(contagens));
-            fecharModais(); abrirDetalhes(contagemAtualId);
+            
+            await saveContagem(c);
+            fecharModais(); 
+            await abrirDetalhes(contagemAtualId);
         }
 
-        function exportarExcel() {
-            const c = JSON.parse(localStorage.getItem('flow_contagens')).find(x => x.id === contagemAtualId);
+        async function exportarExcel() {
+            const contagens = await fetchContagens();
+            const c = contagens.find(x => x.id === contagemAtualId);
             let csv = "data:text/csv;charset=utf-8,\uFEFFPosição;Código;Sistémica;Física;Diferença;Conferente\n";
             c.itens.forEach(i => {
                 let sist = i.qtdSistematica ? parseInt(i.qtdSistematica) : 0;
