@@ -47,8 +47,10 @@
         .btn-login-admin:hover { background-color: var(--primary-dark); }
         .btn-login-app { background-color: #f1f5f9; color: var(--text-dark); border: 1px solid var(--border); }
         .btn-login-app:hover { background-color: #e2e8f0; }
-        .btn-instalar-app { background-color: var(--success); color: white; margin-top: 15px; display: none; } /* NOVO: Estilo do botão de instalação */
-        .btn-instalar-app:hover { background-color: #059669; }
+        
+        /* Botão de Instalação (Canto Superior Direito) */
+        .btn-instalar-app { position: absolute; top: 20px; right: 20px; background-color: var(--success); color: white; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; display: none; align-items: center; gap: 8px; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 2001; }
+        .btn-instalar-app:hover { background-color: #059669; transform: translateY(-2px); }
 
         /* --- ESTRUTURA PRINCIPAL --- */
         #app-wrapper { display: none; width: 100%; height: 100vh; }
@@ -168,7 +170,14 @@
         <span>Sincronizando com a Nuvem...</span>
     </div>
 
+    <!-- 1. TELA DE LOGIN -->
     <div id="view-login">
+        
+        <!-- Botão de Instalação posicionado no canto superior direito -->
+        <button id="btn-instalar" class="btn-instalar-app">
+            <span class="material-icons-outlined">download</span> Instalar App
+        </button>
+
         <div class="login-box">
             <div class="logo-icon">📦</div>
             <h2>Flow Inventário</h2>
@@ -180,14 +189,12 @@
             <button class="login-btn btn-login-app" onclick="fazerLogin('conferente')">
                 <span class="material-icons-outlined">smartphone</span> App Conferência
             </button>
-
-            <button id="btn-instalar" class="login-btn btn-instalar-app">
-                <span class="material-icons-outlined">download</span> Instalar App
-            </button>
         </div>
     </div>
 
+    <!-- 2. ESTRUTURA PRINCIPAL DO APP -->
     <div id="app-wrapper">
+        <!-- MENU LATERAL -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-logo-container">
                 <div class="logo-icon">📦</div>
@@ -211,6 +218,7 @@
         <div class="main-content">
             <div class="scrollable-area">
                 
+                <!-- DASHBOARD ADMIN -->
                 <div id="view-dashboard" style="display: none;">
                     <div class="top-bar">
                         <div>
@@ -262,6 +270,7 @@
                     </div>
                 </div>
 
+                <!-- HISTÓRICO DE CONTAGENS ADMIN -->
                 <div id="view-contagens" style="display: none;">
                     <div class="top-bar">
                         <div>
@@ -286,6 +295,7 @@
                     </div>
                 </div>
 
+                <!-- DETALHES DA CONTAGEM -->
                 <div id="view-detalhes" style="display: none;">
                     <div class="top-bar" style="align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 15px;">
                         <div style="display: flex; align-items: center;">
@@ -316,6 +326,7 @@
                     </div>
                 </div>
 
+                <!-- LISTA DO CONFERENTE (APP MOBILE VIEW) -->
                 <div id="view-conferente-lista" style="display: none;">
                     <div class="top-bar" style="align-items: center;">
                         <div>
@@ -335,6 +346,7 @@
         </div>
     </div>
 
+    <!-- TELA 3: ECRÃ AZUL DE CONFERÊNCIA -->
     <div id="view-conferencia-azul" class="conferencia-container">
         <div class="conferencia-header">
             <div class="conferencia-top">
@@ -358,6 +370,7 @@
         </div>
     </div>
 
+    <!-- MODAIS -->
     <div class="modal-overlay" id="modal-nova-contagem">
         <div class="modal-content">
             <div class="modal-header">
@@ -411,44 +424,33 @@
 
     <script>
         // ==========================================
-        // NOVO: LÓGICA DE INSTALAÇÃO PWA (APP)
+        // LÓGICA DE INSTALAÇÃO PWA (APP)
         // ==========================================
         let deferredPrompt;
         const btnInstalar = document.getElementById('btn-instalar');
 
-        // Escuta o evento que o navegador dispara quando a app cumpre os requisitos para ser instalada
         window.addEventListener('beforeinstallprompt', (e) => {
-            // Previne o prompt automático para podermos controlá-lo com o botão
             e.preventDefault();
             deferredPrompt = e;
-            // Mostra o botão "Instalar App" no ecrã de login
-            btnInstalar.style.display = 'flex';
+            btnInstalar.style.display = 'flex'; // Exibe o botão no canto superior direito
         });
 
-        // Quando o utilizador clica no botão "Instalar App"
         btnInstalar.addEventListener('click', async () => {
             if (deferredPrompt) {
-                // Mostra a janela de instalação do sistema
                 deferredPrompt.prompt();
-                // Espera pela resposta do utilizador
                 const { outcome } = await deferredPrompt.userChoice;
                 if (outcome === 'accepted') {
                     console.log('App instalada com sucesso');
                 }
-                // Limpa o evento
                 deferredPrompt = null;
-                // Esconde o botão após a ação
                 btnInstalar.style.display = 'none';
             }
         });
 
-        // Se o utilizador instalar com sucesso, esconde o botão
         window.addEventListener('appinstalled', () => {
             btnInstalar.style.display = 'none';
         });
 
-        // Para forçar os navegadores (como Chrome) a aceitarem a PWA, é necessário registar um Service Worker.
-        // Criamos um em tempo real via Blob para manter tudo num único ficheiro HTML.
         if ('serviceWorker' in navigator) {
             const swCode = `
                 self.addEventListener('install', (e) => self.skipWaiting());
@@ -471,18 +473,13 @@
         let telaAtualAdmin = 'dashboard';
         let perfilAtual = null;
 
-        // UI Auxiliar para loading
         function showLoading() { document.getElementById('loading-overlay').style.display = 'flex'; }
         function hideLoading() { document.getElementById('loading-overlay').style.display = 'none'; }
 
-        // --- FUNÇÕES DE BANCO DE DADOS (GOOGLE PLANILHAS CORPORATIVO) ---
         async function fetchContagens() {
             try {
                 showLoading();
-                // A requisição de leitura pede 'credentials: include' para tentar usar a sessão do Google do aparelho
                 const response = await fetch(SCRIPT_URL, { credentials: 'omit' });
-                
-                // O Google bloqueia o JSON e devolve a página de Login (HTML) se a pessoa não estiver autenticada
                 const text = await response.text();
                 
                 try {
@@ -508,12 +505,10 @@
                 showLoading();
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Oculta o erro de bloqueio de política na gravação
+                    mode: 'no-cors',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: 'save', dados: contagem })
                 });
-                
-                // Espera 1.5 segundos para a planilha corporativa processar a informação antes de recarregar a tela
                 await new Promise(resolve => setTimeout(resolve, 1500));
                 hideLoading();
             } catch (e) {
@@ -539,7 +534,6 @@
             }
         }
 
-        // --- SISTEMA DE LOGIN E CONTROLE DE PERFIL ---
         function fazerLogin(perfil) {
             perfilAtual = perfil;
             document.getElementById('view-login').style.display = 'none';
@@ -561,7 +555,6 @@
             document.getElementById('view-login').style.display = 'flex';
         }
 
-        // --- NAVEGAÇÃO INTERNA ---
         function mostrarTela(tela) {
             if(perfilAtual === 'admin' && (tela === 'dashboard' || tela === 'contagens')) {
                 telaAtualAdmin = tela;
@@ -599,7 +592,6 @@
             }
         }
 
-        // --- PREENCHIMENTO ESTATÍSTICAS ---
         async function carregarListasEEstatisticas() {
             const contagens = await fetchContagens();
             const tbodyDash = document.getElementById('lista-contagens');
