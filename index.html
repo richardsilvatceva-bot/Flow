@@ -47,6 +47,8 @@
         .btn-login-admin:hover { background-color: var(--primary-dark); }
         .btn-login-app { background-color: #f1f5f9; color: var(--text-dark); border: 1px solid var(--border); }
         .btn-login-app:hover { background-color: #e2e8f0; }
+        .btn-instalar-app { background-color: var(--success); color: white; margin-top: 15px; display: none; } /* NOVO: Estilo do botão de instalação */
+        .btn-instalar-app:hover { background-color: #059669; }
 
         /* --- ESTRUTURA PRINCIPAL --- */
         #app-wrapper { display: none; width: 100%; height: 100vh; }
@@ -166,7 +168,6 @@
         <span>Sincronizando com a Nuvem...</span>
     </div>
 
-    <!-- 1. TELA DE LOGIN -->
     <div id="view-login">
         <div class="login-box">
             <div class="logo-icon">📦</div>
@@ -179,12 +180,14 @@
             <button class="login-btn btn-login-app" onclick="fazerLogin('conferente')">
                 <span class="material-icons-outlined">smartphone</span> App Conferência
             </button>
+
+            <button id="btn-instalar" class="login-btn btn-instalar-app">
+                <span class="material-icons-outlined">download</span> Instalar App
+            </button>
         </div>
     </div>
 
-    <!-- 2. ESTRUTURA PRINCIPAL DO APP -->
     <div id="app-wrapper">
-        <!-- MENU LATERAL -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-logo-container">
                 <div class="logo-icon">📦</div>
@@ -208,7 +211,6 @@
         <div class="main-content">
             <div class="scrollable-area">
                 
-                <!-- DASHBOARD ADMIN -->
                 <div id="view-dashboard" style="display: none;">
                     <div class="top-bar">
                         <div>
@@ -260,7 +262,6 @@
                     </div>
                 </div>
 
-                <!-- HISTÓRICO DE CONTAGENS ADMIN -->
                 <div id="view-contagens" style="display: none;">
                     <div class="top-bar">
                         <div>
@@ -285,7 +286,6 @@
                     </div>
                 </div>
 
-                <!-- DETALHES DA CONTAGEM -->
                 <div id="view-detalhes" style="display: none;">
                     <div class="top-bar" style="align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 15px;">
                         <div style="display: flex; align-items: center;">
@@ -316,7 +316,6 @@
                     </div>
                 </div>
 
-                <!-- LISTA DO CONFERENTE (APP MOBILE VIEW) -->
                 <div id="view-conferente-lista" style="display: none;">
                     <div class="top-bar" style="align-items: center;">
                         <div>
@@ -336,7 +335,6 @@
         </div>
     </div>
 
-    <!-- TELA 3: ECRÃ AZUL DE CONFERÊNCIA -->
     <div id="view-conferencia-azul" class="conferencia-container">
         <div class="conferencia-header">
             <div class="conferencia-top">
@@ -360,7 +358,6 @@
         </div>
     </div>
 
-    <!-- MODAIS -->
     <div class="modal-overlay" id="modal-nova-contagem">
         <div class="modal-content">
             <div class="modal-header">
@@ -413,6 +410,58 @@
     </div>
 
     <script>
+        // ==========================================
+        // NOVO: LÓGICA DE INSTALAÇÃO PWA (APP)
+        // ==========================================
+        let deferredPrompt;
+        const btnInstalar = document.getElementById('btn-instalar');
+
+        // Escuta o evento que o navegador dispara quando a app cumpre os requisitos para ser instalada
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Previne o prompt automático para podermos controlá-lo com o botão
+            e.preventDefault();
+            deferredPrompt = e;
+            // Mostra o botão "Instalar App" no ecrã de login
+            btnInstalar.style.display = 'flex';
+        });
+
+        // Quando o utilizador clica no botão "Instalar App"
+        btnInstalar.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                // Mostra a janela de instalação do sistema
+                deferredPrompt.prompt();
+                // Espera pela resposta do utilizador
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('App instalada com sucesso');
+                }
+                // Limpa o evento
+                deferredPrompt = null;
+                // Esconde o botão após a ação
+                btnInstalar.style.display = 'none';
+            }
+        });
+
+        // Se o utilizador instalar com sucesso, esconde o botão
+        window.addEventListener('appinstalled', () => {
+            btnInstalar.style.display = 'none';
+        });
+
+        // Para forçar os navegadores (como Chrome) a aceitarem a PWA, é necessário registar um Service Worker.
+        // Criamos um em tempo real via Blob para manter tudo num único ficheiro HTML.
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                self.addEventListener('install', (e) => self.skipWaiting());
+                self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
+                self.addEventListener('fetch', (e) => {});
+            `;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(blob))
+                .catch(err => console.log('Service Worker (Blob) falhou, pode requerer HTTPS:', err));
+        }
+        // ==========================================
+
+
         // ==========================================
         // URL CORPORATIVA DO GOOGLE APPS SCRIPT
         // ==========================================
